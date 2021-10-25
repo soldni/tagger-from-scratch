@@ -151,6 +151,18 @@ class ConllTensorSample:
                    pos=torch.stack(tuple(elem.pos for elem in seq)),
                    con=torch.stack(tuple(elem.con for elem in seq)))
 
+    def to(self, device: str):
+        return self.__class__(tokens=self.tokens.to(device),
+                              ner=self.ner.to(device),
+                              pos=self.pos.to(device),
+                              con=self.con.to(device))
+
+    def keys(self):
+        return (f.name for f in dataclasses.fields(self))
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
 
 class ConllDataset(torch.utils.data.Dataset):
     def __init__(self,
