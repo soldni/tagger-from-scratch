@@ -18,11 +18,11 @@ class Config:
     num_workers: int = 0
     embedding_size: int = 128
     lstm_hidden_size: int = 128
-    lstm_num_layers: int = 1
+    lstm_num_layers: int = 2
     lstm_dropout: float = 0.1
     lstm_bidirectional: bool = True
-    classifier_proj_size: int = 64
-    classifier_act_fn: str = 'relu'
+    classifier_proj_size: int = 128
+    classifier_act_fn: str = 'tanh'
     target_task: str = 'ner'
     epochs: int = 50
     learning_rate: float = 1e-4

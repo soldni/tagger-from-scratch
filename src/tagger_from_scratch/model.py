@@ -43,6 +43,7 @@ class BiLSTMModel(torch.nn.Module):
             self.embeddings.weight = torch.nn.Parameter(fasttext_emb)
 
         self.lstm = torch.nn.LSTM(input_size=self.embeddings.embedding_dim,
+                                  batch_first=True,
                                   hidden_size=config.lstm_hidden_size,
                                   num_layers=config.lstm_num_layers,
                                   dropout=config.lstm_dropout,
@@ -59,8 +60,11 @@ class BiLSTMModel(torch.nn.Module):
         labels = (ner if self.target_task == 'ner' else
                   (con if self.target_task == 'con' else pos))
 
+        # TODO: Add proper support for padding
+
         embeddings = self.embeddings(tokens)
         encodings, *_ = self.lstm(embeddings)
+
         proj = self.act_fn(self.proj(encodings))
         output = self.out(proj)
 
