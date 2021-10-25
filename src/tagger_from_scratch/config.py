@@ -26,6 +26,10 @@ class Config:
     target_task: str = 'ner'
     epochs: int = 50
     learning_rate: float = 1e-5
+    adam_beta_1: float = 0.9
+    adam_beta_2: float = 0.999
+    adam_eps: float = 1e-8
+    adam_weight_decay: float = 0.
 
 
 def create_config() -> Config:
@@ -41,7 +45,6 @@ def create_config() -> Config:
 
         def type_fn(local_field_name, local_field_type, local_field_default):
             def _type_fn(x):
-                print(local_field_name, local_field_type, local_field_default)
                 if not issubclass(local_field_type, str):
                     x = ast.literal_eval(x)
                 return local_field_type(x)
