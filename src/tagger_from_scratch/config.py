@@ -27,6 +27,7 @@ class Config:
     epochs: int = 50
     learning_rate: float = 1e-5
 
+
 def create_config() -> Config:
     ap = argparse.ArgumentParser()
 
