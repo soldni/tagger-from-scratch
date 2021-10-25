@@ -10,16 +10,19 @@ from tagger_from_scratch.data import ConllTokenizer
 class BiLSTMOuput:
     output: torch.Tensor
     loss: torch.Tensor = None
+    labels: torch.Tensor = None
 
 
 
 class BiLSTMModel(torch.nn.Module):
     def __init__(self, config: Config, tokenizer: ConllTokenizer):
         self.target_task = config.target_task
-        self.target_vocab_size = len(getattr(tokenizer, f'{self.target_task}_vocab'))
 
         assert self.target_task in {'pos', 'ner', 'con'}, \
             "Choose between 'pos', 'ner', and 'con' as task"
+
+        self.out_pad_token_id = getattr(tokenizer, f'{self.target_task}_pad_id')
+        self.target_vocab_size = len(getattr(tokenizer, f'{self.target_task}_vocab'))
 
         super().__init__()
         # if config.use_fasttext:
@@ -50,10 +53,13 @@ class BiLSTMModel(torch.nn.Module):
         proj = self.act_fn(self.proj(encodings))
         output = self.out(proj)
 
-        if self.training and labels is not None:
+        if labels is not None:
+            labels = torch.where(labels == self.out_pad_token_id, -100, labels)
             loss_fn = torch.nn.CrossEntropyLoss()
             loss = loss_fn(output.view(-1, self.target_vocab_size), labels.view(-1))
+        elif self.training:
+            raise RuntimeError('In training mode, but no labels provided')
         else:
             loss = None
 
-        return BiLSTMOuput(output=output, loss=loss)
+        return BiLSTMOuput(output=output, loss=loss, labels=labels)

@@ -109,6 +109,22 @@ class ConllTokenizer:
     def tokenize_ner(self, conll_sample: ConllCourpusSample):
         return self._tokenize_field(conll_sample.ner, self.ner_vocab)
 
+    @property
+    def tokens_pad_id(self):
+        return self.tokens_vocab[self.pad_token]
+
+    @property
+    def pos_pad_id(self):
+        return self.pos_vocab[self.pad_token]
+
+    @property
+    def ner_pad_id(self):
+        return self.ner_vocab[self.pad_token]
+
+    @property
+    def con_pad_id(self):
+        return self.con_vocab[self.pad_token]
+
 
 def make_conll_dataset(config: Config, split: str, tokenizer: ConllTokenizer = None):
 

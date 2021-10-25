@@ -25,7 +25,7 @@ class Config:
     classifier_act_fn: str = 'relu'
     target_task: str = 'ner'
     epochs: int = 50
-    learning_rate: float = 1e-5
+    learning_rate: float = 1e-4
     adam_beta_1: float = 0.9
     adam_beta_2: float = 0.999
     adam_eps: float = 1e-8
