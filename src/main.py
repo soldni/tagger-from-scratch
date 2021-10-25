@@ -7,7 +7,6 @@ Author: Luca Soldaini
 Email:  luca@soldaini.net
 """
 
-from re import L
 import torch
 import tqdm
 
