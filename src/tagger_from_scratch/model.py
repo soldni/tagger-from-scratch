@@ -3,7 +3,7 @@ import dataclasses
 import torch
 
 from tagger_from_scratch.config import Config
-from tagger_from_scratch.data import ConllTokenizer
+from tagger_from_scratch.data import ConllTokenizer, load_fasttext_vectors
 
 
 @dataclasses.dataclass
@@ -25,11 +25,22 @@ class BiLSTMModel(torch.nn.Module):
         self.target_vocab_size = len(getattr(tokenizer, f'{self.target_task}_vocab'))
 
         super().__init__()
-        # if config.use_fasttext:
-        #     fasttext = load_fasttext_vectors(f'{config.fasttext_data_path}/{config.fasttext_emb_file}')
+        if config.use_fasttext:
+            fasttext_emb = load_fasttext_vectors(f'{config.fasttext_data_path}/{config.fasttext_emb_file}')
+            fasttext_emb = torch.stack(tuple(emb for _, emb in fasttext_emb))
+            embedding_dim = fasttext_emb.size(1)
+        else:
+            embedding_dim = config.embedding_size
+            fasttext_emb = None
+
         self.embeddings = torch.nn.Embedding(num_embeddings=len(tokenizer.tokens_vocab),
-                                             embedding_dim=config.embedding_size,
+                                             embedding_dim=embedding_dim,
                                              padding_idx=tokenizer.tokens_vocab[tokenizer.pad_token])
+        if fasttext_emb is not None:
+            missing_dims = max(0, self.embeddings.weight.size(0) - fasttext_emb.size(0))
+            if missing_dims > 0:
+                fasttext_emb = torch.vstack((fasttext_emb, self.embeddings.weight[-missing_dims:, :]))
+            self.embeddings.weight = torch.nn.Parameter(fasttext_emb)
 
         self.lstm = torch.nn.LSTM(input_size=self.embeddings.embedding_dim,
                                   hidden_size=config.lstm_hidden_size,

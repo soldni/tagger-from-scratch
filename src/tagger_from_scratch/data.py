@@ -2,7 +2,6 @@ from typing import Sequence, Dict, Tuple
 import dataclasses
 
 import torch
-import numpy as np
 
 from tagger_from_scratch.config import Config
 
@@ -42,7 +41,7 @@ def load_conll_corpus(path: str) -> Sequence[ConllCourpusSample]:
     return raw_data
 
 
-def load_fasttext_vectors(path: str) -> Sequence[Tuple[str, np.ndarray]]:
+def load_fasttext_vectors(path: str) -> Sequence[Tuple[str, torch.Tensor]]:
     fasttext_dict = []
 
     with open(path, mode='r', encoding='utf-8') as f:
@@ -51,7 +50,7 @@ def load_fasttext_vectors(path: str) -> Sequence[Tuple[str, np.ndarray]]:
         next(f)
         for i, ln in enumerate(f):
             token, *embedding_values = ln.strip().split()
-            embedding_values = np.array(embedding_values)
+            embedding_values = torch.Tensor(tuple(float(e) for e in embedding_values))
             fasttext_dict.append((token, embedding_values))
 
     return fasttext_dict
@@ -69,7 +68,7 @@ class ConllTokenizer:
         self.has_trained = False
         self.max_length = -1
 
-    def train(self, conll_corpus: Sequence[ConllCourpusSample], fasttext_vectors: Dict[str, np.ndarray] = None):
+    def train(self, conll_corpus: Sequence[ConllCourpusSample], fasttext_vectors: Dict[str, torch.Tensor] = None):
         if fasttext_vectors:
             self.tokens_vocab.update({token: i for i, (token, _) in enumerate(fasttext_vectors)})
 
