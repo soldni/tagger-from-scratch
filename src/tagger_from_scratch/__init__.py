@@ -1,1 +1,1 @@
-from tagger_from_scratch import config, dataset, model
+from tagger_from_scratch import config, data, model

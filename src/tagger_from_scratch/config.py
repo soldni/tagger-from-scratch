@@ -11,6 +11,9 @@ class Config:
     conll_data_path: str = f"{HOME}/data/tagger-from-scratch/conll2003"
     fasttext_data_path: str = f"{HOME}/data/tagger-from-scratch/fasttext"
     fasttext_emb_file: str = 'wiki-news-300d-50k.vec'
+    use_fasttext: bool = False
+    batch_size: int = 64
+    num_workers: int = 0
 
 
 def create_config() -> Config:
