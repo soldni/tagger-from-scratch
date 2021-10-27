@@ -21,6 +21,7 @@ class BiLSTMModel(torch.nn.Module):
         assert self.target_task in {'pos', 'ner', 'con'}, \
             "Choose between 'pos', 'ner', and 'con' as task"
 
+        self.in_pad_token_id = tokenizer.tokens_vocab[tokenizer.pad_token]
         self.out_pad_token_id = getattr(tokenizer, f'{self.target_task}_pad_id')
         self.target_vocab_size = len(getattr(tokenizer, f'{self.target_task}_vocab'))
 
@@ -35,7 +36,7 @@ class BiLSTMModel(torch.nn.Module):
 
         self.embeddings = torch.nn.Embedding(num_embeddings=len(tokenizer.tokens_vocab),
                                              embedding_dim=embedding_dim,
-                                             padding_idx=tokenizer.tokens_vocab[tokenizer.pad_token])
+                                             padding_idx=self.in_pad_token_id)
         if fasttext_emb is not None:
             missing_dims = max(0, self.embeddings.weight.size(0) - fasttext_emb.size(0))
             if missing_dims > 0:
@@ -60,10 +61,31 @@ class BiLSTMModel(torch.nn.Module):
         labels = (ner if self.target_task == 'ner' else
                   (con if self.target_task == 'con' else pos))
 
-        # TODO: Add proper support for padding
+        # this is not ideal at all, but lengths to be sent to the packing function
+        # must be on the cpu, not GPU 😔 We could pass in lengths as one of the inputs
+        # instead of calculating them here, but that would make the whole thing rather
+        # messy so I'm going to go for this hack instead.
+        lengths = torch.where(tokens != self.in_pad_token_id, 1, 0).sum(1).cpu()
+
+        # we actually have to trim labels to maximum length for this mini-batch
+        # because otherwise their size wont match the one out of `pad_packed_sequence`
+        labels = labels[:, :max(lengths)]
 
         embeddings = self.embeddings(tokens)
-        encodings, *_ = self.lstm(embeddings)
+
+        packed_embeddings = torch.nn.utils.rnn.pack_padded_sequence(
+            input=embeddings,
+            lengths=lengths,
+            batch_first=True,
+            enforce_sorted=False    # needs to be true only if we care about ONNX comp
+        )
+
+        packed_encodings, *_ = self.lstm(packed_embeddings)
+        encodings, *_ = torch.nn.utils.rnn.pad_packed_sequence(
+            packed_encodings,
+            batch_first=True,
+            padding_value=self.in_pad_token_id
+        )
 
         proj = self.act_fn(self.proj(encodings))
         output = self.out(proj)
