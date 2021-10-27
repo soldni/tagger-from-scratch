@@ -30,7 +30,10 @@ def load_conll_corpus(path: str) -> Sequence[ConllCourpusSample]:
             if ln.startswith('-DOCSTART-'):
                 continue
             elif ln == '\n':
-                raw_data.append(ConllCourpusSample())
+                if len(raw_data) == 0 or len(raw_data[-1]) > 0:
+                    # only append a new sample if the previous sample
+                    # was filled up or it's the first sample
+                    raw_data.append(ConllCourpusSample())
             else:
                 token, pos, con, ner = ln.strip().split()
                 raw_data[-1].append(token=token, pos=pos, con=con, ner=ner)
@@ -48,7 +51,7 @@ def load_fasttext_vectors(path: str) -> Sequence[Tuple[str, torch.Tensor]]:
         # skip first line, only has shape info about dim
         # and size of vocab
         next(f)
-        for i, ln in enumerate(f):
+        for ln in f:
             token, *embedding_values = ln.strip().split()
             embedding_values = torch.Tensor(tuple(float(e) for e in embedding_values))
             fasttext_dict.append((token, embedding_values))
@@ -131,6 +134,7 @@ def make_conll_dataset(config: Config, split: str, tokenizer: ConllTokenizer = N
         f"Split should either 'train', 'test', or 'valid', not {split}"
 
     conll_corpus = load_conll_corpus(f'{config.conll_data_path}/{split}.txt')
+
     if not tokenizer:
         tokenizer = ConllTokenizer()
         if config.use_fasttext:
